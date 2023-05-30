@@ -1,35 +1,81 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { ReactElement } from "react";
+import { useForm } from "react-hook-form";
+import "./App.css";
 
-function App() {
-  const [count, setCount] = useState(0)
+type FormValues = {
+  fullName: string;
+  email: string;
+};
+
+export default function App(): ReactElement {
+  const blockedDomains = ["blocked.com", "hacker.com", "mrstealyourcode.io"];
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormValues>();
+
+  const onSubmit = (data: FormValues) => console.log(data);
 
   return (
-    <>
+    <form onSubmit={handleSubmit(onSubmit)}>
       <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+        <label htmlFor="fullName">Full name</label>
+        <input
+          id="fullName"
+          type="text"
+          placeholder="Nick"
+          aria-invalid={errors.fullName ? "true" : "false"}
+          {...register("fullName", {
+            required: {
+              value: true,
+              message: "Full Name is required",
+            },
+            maxLength: { value: 40, message: "40 character limit" },
+          })}
+        />
+        {errors.fullName && (
+          <p className="form__field-error">
+            {errors.fullName?.message?.toString()}
+          </p>
+        )}
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
 
-export default App
+      <div>
+        <label htmlFor="email">Email</label>
+        <input
+          type="text"
+          placeholder="example@company.com"
+          aria-invalid={errors.email ? "true" : "false"}
+          {...register("email", {
+            required: {
+              value: true,
+              message: "Email is required",
+            },
+            pattern: {
+              value:
+                /^[\w\.-]+(\+[\w\.-]+)?@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*(\.[a-zA-Z]{2,})$/,
+              message: "Invalid email format.",
+            },
+            validate: {
+              notBlocked: (fieldValue) => {
+                return blockedDomains.indexOf(
+                  fieldValue.substring(fieldValue.indexOf("@"))
+                ) > -1
+                  ? true
+                  : "This domain is blocked";
+              },
+            },
+          })}
+        />
+        {errors.email && (
+          <p className="form__field-error">
+            {errors.email?.message?.toString()}
+          </p>
+        )}
+      </div>
+      <input type="submit" />
+    </form>
+  );
+}
